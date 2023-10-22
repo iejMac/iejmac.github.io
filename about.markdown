@@ -4,4 +4,4 @@ title: About
 permalink: /about/
 ---
 
-Hi, I'm Maciej (MA-chay). I'm interested in intelligence and engineering.
+Hi, I'm Maciej (MA-chay). I'm trying to do more thinking and writing. Please criticize me.
