@@ -4,6 +4,9 @@ title:  "exploring tensor alignments in neural networks (part 1)"
 ---
 this document is a summary from a light exploration into neural network parametrizations. the parametrization space we’ll focus on is the abc-parametrization whose definition we borrow from [1]: 
 
+**The Cauchy-Schwarz Inequality**\
+$$\left( \sum_{k=1}^n a_k b_k \right)^2 \leq \left( \sum_{k=1}^n a_k^2 \right) \left( \sum_{k=1}^n b_k^2 \right)$$
+
 ## background
 in numerical optimization we want our algorithms to be fast and stable. these two qualities exist in tension, creating an inevitable tradeoff. pushing for speed positions work at the stability boundary [2, 3] where small changes in experimental setup can nudge us off the edge. what functions reliably at one scale may fail at another, with instabilities often remaining hidden until deployment at scale.
 
