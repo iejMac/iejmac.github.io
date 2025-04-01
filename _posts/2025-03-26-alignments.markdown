@@ -17,7 +17,7 @@ in numerical optimization we want our algorithms to be fast and stable. these tw
 we can analyze an important aspect of training multi-layer neural networks with the following representative model:
 
 <div align="center">
-  <img src="/assets/alignments/preactivation_t.png" width="500"/>
+  <img src="/assets/alignments/preactivation_t.png" width="600"/>
 </div>
 
 
@@ -27,13 +27,13 @@ equation 1: pre-activation vector at layer l during training of an MLP
 this equation captures how perturbations in weights and activations propagate through the network during training. let's examine a simple example for how to design a parametrization to combat instabilities - a single linear weight matrix acting on an input vector.
 
 <div align="center">
-  <img src="/assets/alignments/bad_param_scale.png" width="500"/>
+  <img src="/assets/alignments/bad_param_scale.png" width="400"/>
 </div>
 
 if we naively parametrize our weight matrix, the average coordinate scale is O(sqrt(n)) - this isn’t great if we want to scale model width on hardware with finite precision. lets fix this with a parameter multiplier:
 
 <div align="center">
-  <img src="/assets/alignments/good_param_scale.png" width="500"/>
+  <img src="/assets/alignments/good_param_scale.png" width="400"/>
 </div>
 
 with the 1/sqrt(n) multiplier, for any width we decide to go with, our matrix-vector product will be stable w.r.t. width scaling i.e. the coordinate scale is not a function of the width.
@@ -45,14 +45,14 @@ one limitation of this example is its idealistic assumption that W and x are ind
 consider an extreme case: if during the first optimizer update, all rows of W were transformed into x.T, the product would scale as O(n) rather than O(√n) - they would be fully aligned. many researchers assume this "full alignment" [5, 6] after training sufficiently warms up and design "defensive" parameterizations to ensure stability under these extreme conditions. however, in [1] they measure the log-alignment ratio and demonstrate this is often overly conservative, suggesting performance gains are possible by relaxing these alignment assumptions.
 
 <div align="center">
-  <img src="/assets/alignments/log_alignment_ratio.png" width="500"/>
+  <img src="/assets/alignments/log_alignment_ratio.png" width="400"/>
 </div>
 
 ## solving for optimal parametrizations
 the optimal parameterization maximizes convergence speed while maintaining training stability. to derive such parameterizations, we need clear objectives. the first is straightforward—we want to maximize learning rate. the second requires more nuance. for a comprehensive discussion on this topic, we recommend [1], from which we borrow the following definition:
 
 <div align="center">
-  <img src="/assets/alignments/change_in_activation_scale.png" width="500"/>
+  <img src="/assets/alignments/change_in_activation_scale.png" width="600"/>
 </div>
 equation 2: scale of change in activations
 
@@ -63,13 +63,13 @@ intuitively, when r_l = 0, the change in activations remains constant regardless
 with our neural network training dynamics described in equation 1 and our stability metric established in equation 2, we can now analyze alignment effects. we can examine the log-alignment ratio for each term in equation 1 (except the first term, since we have no alignment during initialization).
 
 <div align="center">
-  <img src="/assets/alignments/alignments.png" width="500"/>
+  <img src="/assets/alignments/alignments.png" width="700"/>
 </div>
 
 and derive a system of equations and inequalities which describe stable training by ensuring that our stability constraints are met during each training step (see Appendix of [1] for derivation):
 
 <div align="center">
-  <img src="/assets/alignments/stability_constraints.png" width="500"/>
+  <img src="/assets/alignments/stability_constraints.png" width="700"/>
 </div>
 figure 2: system of constraints which define stable training
 
@@ -87,8 +87,8 @@ to make 2D plots, let's explore 2 slices of our parameterization space (a3 vs b3
 * on each graph, we will overlay the boundary of stability (where rL = 0)
 
 <div align="center">
-  <img src="/assets/alignments/a3b3_high_res_rLs.png" width="350"/>
-  <img src="/assets/alignments/c1c2_high_res_rLs.png" width="350"/>
+  <img src="/assets/alignments/a3b3_high_res_rLs.png" width="360"/>
+  <img src="/assets/alignments/c1c2_high_res_rLs.png" width="360"/>
 </div>
 
 figure 3: training stability visualized for a grid of different parameterizations based on muP. each pixel is the mean of the change in activation scale (since initialization) for the last 100 steps of training. the theoretical boundary of stability defined by the system in figure 2 is shown in white 
