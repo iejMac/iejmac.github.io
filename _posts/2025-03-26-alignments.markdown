@@ -94,7 +94,11 @@ to make 2D plots, let's explore 2 slices of our parameterization space (a3 vs b3
 figure 3: training stability visualized for a grid of different parameterizations based on muP. each pixel is the mean of the change in activation scale (since initialization) for the last 100 steps of training. the theoretical boundary of stability defined by the system in figure 2 is shown in white 
 these visualizations show strong overlap with our theoretical predictions and practical results. however, discrepancies appear in two regions: below and to the left of the stable training frontier in the left grid, and the right grid respectively. could our alignment assumptions be creating overly restrictive constraints? to investigate this hypothesis, let's examine one experiment from the figure above and track how its alignment variables evolve throughout the training process.
 
-
+<div align="center">
+  <img src="/assets/alignments/alignment_check_u.png" width="200"/>
+  <img src="/assets/alignments/alignment_check_omega.png" width="200"/>
+  <img src="/assets/alignments/alignment_check_alpha.png" width="200"/>
+</div>
 
 figure 4: u (left), omega (middle), and alpha (right) alignment metrics plotted for a single run from the figure 3 experiment during training. the shade of the lines denotes the layer index with darker shades denoting earlier layers
 
@@ -103,6 +107,10 @@ alignment appears to converge during training
 our initial assumptions were inaccurate - full alignment would mean 0.5 omega for all layers and 1.0 u and alpha for all layers. While our omega estimates were relatively accurate, we significantly overestimated alignment for alpha and u variables.
 with these empirically measured alignment values, we can now update our visualization to reflect more accurate alignment assumptions.
 
+<div align="center">
+  <img src="/assets/alignments/a3b3_high_res_alignment_adjusted_rLs.png" width="360"/>
+  <img src="/assets/alignments/c1c2_high_res_alignment_adjusted_rLs.png" width="360"/>
+</div>
 figure 5: same as figure 3 but stable training frontier uses measured alignment assumptions 
 
 fascinating! by using measured alignment assumptions, we can improve our estimates of the stable training frontier!
@@ -112,6 +120,9 @@ our analysis reveals a key opportunity: by overestimating alignment, we unnecess
 rather than manually probing layer learning rates, we formulated this as a constrained optimization problem: maximize learning rates while satisfying our established stability inequalities. we developed a solver that accepts any ab parameterization and alignment settings (alpha, omega, u), then outputs maximal stable learning rate exponents.
 by applying this to muP with our empirically measured alignment values, we discovered that for that experiment we can increase the learning rate exponent of the second layer by 0.404 (as shown in the figures). this translates to multiplying the middle layer learning rate by width^0.404 while maintaining stability. if we rerun this experiment in that setting we see the following substantial improvement in loss:
 
+<div align="center">
+  <img src="/assets/alignments/small_preinit_alignment_loss_comparison.png" width="700"/>
+</div>
 figure 6: effect of using maximal learning rate exponents derived from measured alignment variables
 
 by using data-parameter alignment measurements, we minimize loss more effectively in this simple synthetic setting.
@@ -128,12 +139,18 @@ take ab-parameterization and get converged alignment variables from lowest-width
 derive maximal learning rate exponents using measured alignments, then run with that
 this method is practical—run a small-scale experiment to discover data-parameter alignments, then apply to your target run. for brevity, i'll only show mean-field parameterization results, but the pattern repeats across parameterizations. our measured-alignment-based learning rate exponents outperform base mfp for adam, but for sgd, it's the opposite.
 
-
-
+<div align="center">
+  <img src="/assets/alignments/measured_alignment_mfp_adam_losses.png" width="700"/>
+</div>
+<div align="center">
+  <img src="/assets/alignments/measured_alignment_mfp_sgd_losses.png" width="700"/>
+</div>
 
 our methodology—using converged alignment variables from smaller runs to initialize larger, separate runs—rests on the assumption that alignment is primarily determined by data and parameterization choices. since these properties remain constant across all runs in our grid, we expect the alignment patterns to generalize. to check this assumption, we can compare the converged alignment variables between full alignment initialization and measured alignment initialization across different optimizers and parameterizations used in our experiments. 
 
-
+<div align="center">
+  <img src="/assets/alignments/converged_alignment_difference.png" width="700"/>
+</div>
 metric: abs((full - measured)[-100:].mean())
 
 as it turns out - initial alignment assumptions influence the convergence trajectory itself, potentially invalidating our original assumptions. consequently, our calculated "maximal" learning rate exponents may no longer be truly maximal or maintain stability.
@@ -148,43 +165,84 @@ in the worst case, across various parameterization and optimizer combinations, w
 
 as an example of a significant improvement, here's SP + Adam:
 
+<div align="center">
+  <img src="/assets/alignments/dynamic_alignment_sp_sgd_losses.png" width="700"/>
+</div>
+
 and here’s an example where our pre-measured alignment method underperformed but our new dynamic scheduler was able to at least match full alignment - muP + SGD 
 
+<div align="center">
+  <img src="/assets/alignments/dynamic_alignment_mup_sgd_losses.png" width="700"/>
+</div>
+
 our hypothesis for this case concerns our definition of "maximal per-layer learning rate exponents." in our solver, we maximize the sum of learning rates, allowing tradeoffs between layers—we would reduce one layer's rate by 0.1 if it enables increasing others by a total exceeding 0.1.
+
+
 this approach assumes all layers contribute equally to optimization, which may not be universally true. if this assumption explains our inconsistent improvements, we should observe a correlation between performance and tradeoff intensity. to test this, we'll plot loss improvement over the baseline against a metric measuring these tradeoffs—specifically, the average decrease in learning rate per layer (calculated as the sum of all decreases divided by the number of layers, which equals zero if all layers receive increased rates).
 
+<div align="center">
+  <img src="/assets/alignments/loss_decrease_vs_lr_tradeoffs.png" width="700"/>
+</div>
 
 as we can see, there is a clear relationship showing that more tradeoffs lead to less loss improvement. the good thing is that in the vast majority of cases we see a healthy improvement in loss. in the future an interesting direction to look into might be a solver which only considers pareto improvements over full alignment.
+
+
+we can also see that ntk and sp parametrization dominate the lower tradeoff (left) portion of the figure whereas mfp and mup dominate the right. furthermore in that right cluster we can see that sgd tends to have more tradeoffs than adam. we can see whats going on when we look at the learning rate schedule for runs from this cluster, f.e. lets look at muP + sgd
+
+<div align="center">
+  <img src="/assets/alignments/mup_sgdlearning_rates.png" width="700"/>
+</div>
+
+for this parametrization x optimizer, when we have full alignment, all layers get the same learning rate which means our solver will likely attempt some tradeoffs. on the other hand with ntk + sgd we can almost always get a pareto increase in learning rate for all layers.
+
+<div align="center">
+  <img src="/assets/alignments/ntk_sgdlearning_rates.png" width="700"/>
+</div>
+
 ## what impacts alignment?
 its not a silly assumption that the alignment is constant and increases after training has sufficiently warmed up. to visualize this we can look at some simple math:
 
+<div align="center">
+  <img src="/assets/alignments/alignment_creation.png" width="700"/>
+</div>
 
 what we see above is that the primary mechanism through which the weights get updated during training is by adding “shades” of the data therefore its natural to assume the alignment would increase on the same sample. the issue with this assumption is that in most training workflows we rarely iterate over the same data and also we sometimes apply augmentations to it, like adding noise. once again we can look at what the math in the previous example would look like if we decided to add some noise to x:
 
+<div align="center">
+  <img src="/assets/alignments/impact_of_noise_on_alignment.png" width="700"/>
+</div>
+
+we can see that even if there’s a lot of alignment developing in that first term w^{t} @ x, there’s plenty of other terms in the output which will have no alignment given that is the product of something with a noise vector. a simple example of the latter is diffusion models where at each step we will be adding noise to the data which will fundamentally limit the amount of alignment which can develop in at least the earlier layers.
 
 
-what we see above is that even if there’s a lot of alignment developing in that first term w^{t} @ x, there’s plenty of other terms in the output which will have no alignment given that is the product of something with a noise vector. a simple example of the latter is diffusion models where at each step we will be adding noise to the data which will fundamentally limit the amount of alignment which can develop in at least the earlier layers.
 to get an empirical sense of this we can add noise to our data during training and see how the alignment variables converge. below we can see a CIFAR-10 training run where we do a linear interpolation between the noise and the data according to the signal strength parameter
 
+<div align="center">
+  <img src="/assets/alignments/empirical_noise_impact_on_alignment.png" width="700"/>
+</div>
 
 
 you can see that for some alignment variables, decreasing signal strength leads to decreased alignment.	
+
 ## conclusion
+
 our exploration into tensor alignments reveals a critical insight: the traditional assumption that these alignments are constant and significant isn’t always correct. in reality, they're dynamic, and vary across network layers and training step. we can likely unlock faster training without sacrificing stability by measuring actual alignments instead of relying on theoretical assumptions. perhaps most intriguing is the discovery that adding noise directly manipulates alignment properties, creating a surprising connection to diffusion models. this suggests our approach could be especially valuable in training regimes where data characteristics change systematically.
 stay tuned for Part 2, where we'll transform these findings into practical, ready-to-use methods that can be applied to real-world training scenarios.
-future work
 
-as we pointed out above, our notion of “maximal” per layer learning rates isn’t necessarily correct. one follow up idea could be to test out different notions of maximal f.e. ones that only allow pareto improvements over full alignment or which only allow epsilon decrease over full alignment.
-what else impacts alignment? can we predict a decrease in alignment based on diffusion noise schedules and use that to our advantage? can we expect multimodal models to have lower average alignment?
-cheaper ways of measuring alignment - every N steps, every N steps with decreasing frequency due to convergence, every N layers, etc. 
-how to compose with training-step-wise lr schedules:
-just multiply the two schedules? i.e. base warmup-stable-decay schedule multiplied by the one discovered through alignment
-replace classic linear warmup with alignment discovery?
+## future work
+
+* as we pointed out above, our notion of “maximal” per layer learning rates isn’t necessarily correct. one follow up idea could be to test out different notions of maximal f.e. ones that only allow pareto improvements over full alignment or which only allow epsilon decrease over full alignment.
+* different notions of alignment. 
+* what else impacts alignment? can we predict a decrease in alignment based on diffusion noise schedules and use that to our advantage? can we expect multimodal models to have lower average alignment?
+* cheaper ways of measuring alignment - every N steps, every N steps with decreasing frequency due to convergence, every N layers, etc. 
+* how to compose with training-step-wise lr schedules:
+  * just multiply the two schedules? i.e. base warmup-stable-decay schedule multiplied by the one discovered through alignment
+  * replace classic linear warmup with alignment discovery?
 
 ## references
-[1] Scaling Exponents Across Parameterizations and Optimizers (https://arxiv.org/abs/2407.05872)
-[2] The boundary of neural network trainability is fractal (https://arxiv.org/abs/2402.06184)
-[3] Why Momentum Really Works (https://distill.pub/2017/momentum/)
-[4] Tensor Programs V: Tuning Large Neural Networks via Zero-Shot Hyperparameter Transfer (https://arxiv.org/abs/2203.03466)
-[5] Feature Learning in Infinite-Width Neural Networks (https://arxiv.org/abs/2011.14522)
-[6] Scalable Optimization in the Modular Norm (https://arxiv.org/abs/2405.14813)
+* [1] Scaling Exponents Across Parameterizations and Optimizers (https://arxiv.org/abs/2407.05872)
+* [2] The boundary of neural network trainability is fractal (https://arxiv.org/abs/2402.06184)
+* [3] Why Momentum Really Works (https://distill.pub/2017/momentum/)
+* [4] Tensor Programs V: Tuning Large Neural Networks via Zero-Shot Hyperparameter Transfer (https://arxiv.org/abs/2203.03466)
+* [5] Feature Learning in Infinite-Width Neural Networks (https://arxiv.org/abs/2011.14522)
+* [6] Scalable Optimization in the Modular Norm (https://arxiv.org/abs/2405.14813)
