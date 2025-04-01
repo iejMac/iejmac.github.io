@@ -84,9 +84,9 @@ To make 2D plots, let's explore 2 slices of our parameterization space (A3 vs B3
 These visualizations show strong overlap with our theoretical predictions and practical results. However, discrepancies appear in two regions: below and to the left of the stable training frontier in the left grid, and the right grid respectively. Could our alignment assumptions be creating overly restrictive constraints? To investigate this hypothesis, let's examine one experiment from the figure above and track how its alignment variables evolve throughout the training process. For these per-layer metrics we tint the color of the curve brighter proportional to the layer index.
 
 <div align="center">
-  <img src="/assets/alignments/alignment_check_u.png" width="250"/>
-  <img src="/assets/alignments/alignment_check_omega.png" width="250"/>
-  <img src="/assets/alignments/alignment_check_alpha.png" width="250"/>
+  <img src="/assets/alignments/alignment_check_u.png" width="240"/>
+  <img src="/assets/alignments/alignment_check_omega.png" width="240"/>
+  <img src="/assets/alignments/alignment_check_alpha.png" width="240"/>
 </div>
 
 We can extract two key insights from this analysis:
