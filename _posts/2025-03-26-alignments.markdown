@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Exploring Tensor Alignments in Neural Networks (Part 1)"
+title:  "Exploring Tensor Alignments in Neural Networks"
 author: Maciej Kilian, Maksymilian Wojnar
 ---
 This document is a summary from a light exploration into neural network parametrizations. The parametrization space we’ll focus on is the abc-parametrization whose definition we borrow from [1]: 
@@ -206,7 +206,7 @@ You can see that for some alignment variables, decreasing signal strength leads 
 
 ## Conclusion
 Our exploration into tensor alignments reveals a critical insight: the traditional assumption that these alignments are constant and significant isn’t always correct. In reality, they're dynamic, and vary across network layers and training step. We can likely unlock faster training without sacrificing stability by measuring actual alignments instead of relying on theoretical assumptions. Perhaps most intriguing is the discovery that adding noise directly manipulates alignment properties, creating a surprising connection to diffusion models. This suggests our approach could be especially valuable in training regimes where data characteristics change systematically.
-Stay tuned for Part 2, where we'll transform these findings into practical, ready-to-use methods that can be applied to real-world training scenarios.
+Stay tuned for the next stage of this project, where we'll transform these findings into practical, ready-to-use methods that can be applied to real-world training scenarios.
 
 ## Future Work
 * As we pointed out above, our notion of “maximal” per layer learning rates isn’t necessarily correct. One follow-up idea could be to test out different notions of maximal f.e. ones that only allow Pareto improvements over full alignment or which only allow epsilon decrease over full alignment.
@@ -224,3 +224,13 @@ Stay tuned for Part 2, where we'll transform these findings into practical, read
 * [4] Tensor Programs V: Tuning Large Neural Networks via Zero-Shot Hyperparameter Transfer (https://arxiv.org/abs/2203.03466)
 * [5] Feature Learning in Infinite-Width Neural Networks (https://arxiv.org/abs/2011.14522)
 * [6] Scalable Optimization in the Modular Norm (https://arxiv.org/abs/2405.14813)
+
+## Citation
+```
+@misc{kilian2025tensoralignments,
+  author       = {Maciej Kilian and Maksymilian Wojnar},
+  title        = {Exploring Tensor Alignments in Neural Networks},
+  year         = {2025},
+  url          = {https://iejmac.github.io/2025/03/26/alignments.html}
+}
+```
