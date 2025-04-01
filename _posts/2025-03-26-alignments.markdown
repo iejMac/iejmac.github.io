@@ -4,7 +4,7 @@ title:  "exploring tensor alignments in neural networks (part 1)"
 ---
 this document is a summary from a light exploration into neural network parametrizations. the parametrization space we’ll focus on is the abc-parametrization whose definition we borrow from [1]: 
 
-![](/assets/alignments/parametrization_definition.png)
+<img src="/assets/alignments/parametrization_definition.png" width="300"/>
 
 in the end we develop a max-lr solver which is output the c’s which maximize learning rate for a given ab-parametrization and an alignment measurement. we use this solver to create a dynamic learning rate schedule which maximizes the learning rate at each step of a training run and show that in the majority of cases it improves convergence.
 
@@ -73,8 +73,10 @@ to make 2D plots, let's explore 2 slices of our parameterization space (a3 vs b3
 * the best models are trained where this change is constant scale (i.e., 0), which will appear as bright blue colors
 * on each graph, we will overlay the boundary of stability (where rL = 0)
 
-| ![](/assets/alignments/a3b3_high_res_rLs.png) | ![](/assets/alignments/c1c2_high_res_rLs.png) |
-|------------------|------------------|
+<p float="left">
+  <img src="/assets/alignments/a3b3_high_res_rLs.png" width="300"/>
+  <img src="/assets/alignments/c1c2_high_res_rLs.png" width="300"/>
+</p>
 
 figure 3: training stability visualized for a grid of different parameterizations based on muP. each pixel is the mean of the change in activation scale (since initialization) for the last 100 steps of training. the theoretical boundary of stability defined by the system in figure 2 is shown in white 
 these visualizations show strong overlap with our theoretical predictions and practical results. however, discrepancies appear in two regions: below and to the left of the stable training frontier in the left grid, and the right grid respectively. could our alignment assumptions be creating overly restrictive constraints? to investigate this hypothesis, let's examine one experiment from the figure above and track how its alignment variables evolve throughout the training process.
