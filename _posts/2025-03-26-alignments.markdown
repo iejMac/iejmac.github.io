@@ -76,8 +76,8 @@ to make 2D plots, let's explore 2 slices of our parameterization space (a3 vs b3
 * on each graph, we will overlay the boundary of stability (where rL = 0)
 
 <div align="center">
-  <img src="/assets/alignments/a3b3_high_res_rLs.png" width="400"/>
-  <img src="/assets/alignments/c1c2_high_res_rLs.png" width="400"/>
+  <img src="/assets/alignments/a3b3_high_res_rLs.png" width="300"/>
+  <img src="/assets/alignments/c1c2_high_res_rLs.png" width="300"/>
 </div>
 
 figure 3: training stability visualized for a grid of different parameterizations based on muP. each pixel is the mean of the change in activation scale (since initialization) for the last 100 steps of training. the theoretical boundary of stability defined by the system in figure 2 is shown in white 
