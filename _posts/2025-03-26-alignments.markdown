@@ -205,8 +205,9 @@ To get an empirical sense of this we can add noise to our data during training a
 You can see that for some alignment variables, decreasing signal strength leads to decreased alignment.
 
 ## Conclusion
-Our exploration into tensor alignments reveals a critical insight: the traditional assumption that these alignments are constant and significant isn’t always correct. In reality, they're dynamic, and vary across network layers and training step. We can likely unlock faster training without sacrificing stability by measuring actual alignments instead of relying on theoretical assumptions. Perhaps most intriguing is the discovery that adding noise directly manipulates alignment properties, creating a surprising connection to diffusion models. This suggests our approach could be especially valuable in training regimes where data characteristics change systematically.
-Stay tuned for the next stage of this project, where we'll transform these findings into practical, ready-to-use methods that can be applied to real-world training scenarios.
+Our exploration into tensor alignments confirms the findings of prior work [1] that the traditional assumption that these alignments are constant and significant isn't always correct. In reality, they're dynamic, and vary across network layers and training steps. We can likely unlock faster training without sacrificing stability by measuring actual alignments instead of relying on theoretical assumptions which we demonstrate for a set of simple experiments. An intriguing finding is that adding noise directly manipulates alignment properties. This suggests our approach could be especially valuable in training regimes where data characteristics change systematically such as highly multimodal or denoising-based training.
+
+In follow up work we will scale our method and transform these findings into practical, ready-to-use methods that can be applied to real-world training scenarios
 
 ## Future Work
 * As we pointed out above, our notion of “maximal” per layer learning rates isn’t necessarily correct. One follow-up idea could be to test out different notions of maximal f.e. ones that only allow Pareto improvements over full alignment or which only allow epsilon decrease over full alignment.
