@@ -135,12 +135,11 @@ this method is practical—run a small-scale experiment to discover data-paramet
   <img src="/assets/alignments/measured_alignment_mfp_sgd_losses.png" width="700"/>
 </div>
 
-our methodology—using converged alignment variables from smaller runs to initialize larger, separate runs—rests on the assumption that alignment is primarily determined by data and parameterization choices. since these properties remain constant across all runs in our grid, we expect the alignment patterns to generalize. to check this assumption, we can compare the converged alignment variables between full alignment initialization and measured alignment initialization across different optimizers and parameterizations used in our experiments. 
+our methodology—using converged alignment variables from smaller runs to initialize larger, separate runs—rests on the assumption that alignment is primarily determined by data and parameterization choices. since these properties remain constant across all runs in our grid, we expect the alignment patterns to generalize. to check this assumption, we can look at the absolute difference in the converged (mean across last 100 training steps) alignment variables between full alignment initialization and measured alignment initialization across different optimizers and parameterizations used in our experiments. 
 
 <div align="center">
   <img src="/assets/alignments/converged_alignment_difference.png" width="500"/>
 </div>
-metric: abs((full - measured)[-100:].mean())
 
 as it turns out - initial alignment assumptions influence the convergence trajectory itself, potentially invalidating our original assumptions. consequently, our calculated "maximal" learning rate exponents may no longer be truly maximal or maintain stability.
 furthermore, the results clearly show that pre-initialized alignments cause significantly greater deviation in alpha alignments with SGD compared to Adam. this suggests an important phenomenon: certain optimizers exhibit more robust alignment convergence, enabling more reliable cross-model transfer of alignment assumptions.
@@ -167,7 +166,7 @@ and here’s an example where our pre-measured alignment method underperformed b
 our hypothesis for this case concerns our definition of "maximal per-layer learning rate exponents." in our solver, we maximize the sum of learning rates, allowing tradeoffs between layers—we would reduce one layer's rate by 0.1 if it enables increasing others by a total exceeding 0.1.
 
 
-this approach assumes all layers contribute equally to optimization, which may not be universally true. if this assumption explains our inconsistent improvements, we should observe a correlation between performance and tradeoff intensity. to test this, we'll plot loss improvement over the baseline against a metric measuring these tradeoffs—specifically, the average decrease in learning rate per layer (calculated as the sum of all decreases divided by the number of layers, which equals zero if all layers receive increased rates).
+this approach assumes all layers contribute equally to optimization, which may not be universally true. if this assumption explains our inconsistent improvements, we should observe a correlation between performance and tradeoff intensity. to test this, we'll plot loss improvement over the baseline against a metric measuring these tradeoffs—specifically, the average decrease (increases ignored) in learning rate per layer calculated as the sum of all decreases divided by the number of layers, which equals zero if all layers receive increased rates.
 
 <div align="center">
   <img src="/assets/alignments/loss_decrease_vs_lr_tradeoffs.png" width="700"/>
