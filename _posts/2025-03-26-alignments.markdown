@@ -4,53 +4,77 @@ title:  "exploring tensor alignments in neural networks (part 1)"
 ---
 this document is a summary from a light exploration into neural network parametrizations. the parametrization space we’ll focus on is the abc-parametrization whose definition we borrow from [1]: 
 
-This sentence uses $\` and \`$ delimiters to show math inline: $`\sqrt{3x-1}+(1+x)^2`$
+![](/assets/alignments/parametrization_definition.png)
 
+in the end we develop a max-lr solver which is output the c’s which maximize learning rate for a given ab-parametrization and an alignment measurement. we use this solver to create a dynamic learning rate schedule which maximizes the learning rate at each step of a training run and show that in the majority of cases it improves convergence.
 
 ## background
 in numerical optimization we want our algorithms to be fast and stable. these two qualities exist in tension, creating an inevitable tradeoff. pushing for speed positions work at the stability boundary [2, 3] where small changes in experimental setup can nudge us off the edge. what functions reliably at one scale may fail at another, with instabilities often remaining hidden until deployment at scale.
 
+
 we can analyze an important aspect of training multi-layer neural networks with the following representative model:
 
-
+![](/assets/alignments/preactivation_t.png)
 equation 1: pre-activation vector at layer l during training of an MLP
+
+
 this equation captures how perturbations in weights and activations propagate through the network during training. let's examine a simple example for how to design a parametrization to combat instabilities - a single linear weight matrix acting on an input vector.
 
 
+![](/assets/alignments/bad_param_scale.png)
 
 if we naively parametrize our weight matrix, the average coordinate scale is O(sqrt(n)) - this isn’t great if we want to scale model width on hardware with finite precision. lets fix this with a parameter multiplier:
 
+![](/assets/alignments/good_param_scale.png)
 
 with the 1/sqrt(n) multiplier, for any width we decide to go with, our matrix-vector product will be stable w.r.t. width scaling i.e. the coordinate scale is not a function of the width.
+
+
 one limitation of this example is its idealistic assumption that W and x are independently sampled with zero mean, allowing us to apply the Central Limit Theorem. this is only true at initialization when both are randomly drawn from zero-mean distributions. after the first update, we must consider potential alignments between W and x.
+
+
 consider an extreme case: if during the first optimizer update, all rows of W were transformed into x.T, the product would scale as O(n) rather than O(√n) - they would be fully aligned. many researchers assume this "full alignment" [5, 6] after training sufficiently warms up and design "defensive" parameterizations to ensure stability under these extreme conditions. however, in [1] they measure the log-alignment ratio and demonstrate this is often overly conservative, suggesting performance gains are possible by relaxing these alignment assumptions.
+
+![](/assets/alignments/log_alignment_ratio.png)
 
 ## solving for optimal parametrizations
 the optimal parameterization maximizes convergence speed while maintaining training stability. to derive such parameterizations, we need clear objectives. the first is straightforward—we want to maximize learning rate. the second requires more nuance. for a comprehensive discussion on this topic, we recommend [1], from which we borrow the following definition:
 
+
+![](/assets/alignments/change_in_activation_scale.png)
 equation 2: scale of change in activations
+
 
 intuitively, when r_l = 0, the change in activations remains constant regardless of width scaling. Any deviation from this equilibrium pushes us toward either vanishing or exploding activation changes, resulting in poor performance or instability, respectively
 
+
 with our neural network training dynamics described in equation 1 and our stability metric established in equation 2, we can now analyze alignment effects. we can examine the log-alignment ratio for each term in equation 1 (except the first term, since we have no alignment during initialization).
+
+
+![](/assets/alignments/alignments.png)
+
 
 and derive a system of equations and inequalities which describe stable training by ensuring that our stability constraints are met during each training step (see Appendix of [1] for derivation):
 
 
+![](/assets/alignments/stability_constraints.png)
 figure 2: system of constraints which define stable training
+
 ## seeing the parametrization landscape
 to verify our understanding and theory, we can create a visualization - let's grab an interesting point on the polyhedron defined by the above system of equations and inequalities, like muP [4], and probe around it. at each point, we can check if the system is satisfied and also train a simple neural network to measure the metrics we discussed above.
 
 we can borrow the nice fractal visualization from [2]:
-tiny MLPs with 3 layers and a hidden dimension of 64, using ReLU
-synthetic data where the input dataset is sampled from an 8-dimensional standard gaussian and output is sampled from 1-dimensional standard gaussian
-training with MSE, full-batch gradient descent for 500 steps of SGD
+* tiny MLPs with 3 layers and a hidden dimension of 64, using ReLU
+* synthetic data where the input dataset is sampled from an 8-dimensional standard gaussian and output is sampled from 1-dimensional standard gaussian
+* training with MSE, full-batch gradient descent for 500 steps of SGD
 
 to make 2D plots, let's explore 2 slices of our parameterization space (a3 vs b3 and c1 vs c2). for each, we'll center the graph at the muP parameterization and assume full alignment.
-the color of each pixel represents the mean scale of change in activations (compared to initialization) in the last 100 steps of training (darker red means more divergence, darker blue means vanishing to 0)
-the best models are trained where this change is constant scale (i.e., 0), which will appear as bright blue colors
-on each graph, we will overlay the boundary of stability (where rL = 0)
+* the color of each pixel represents the mean scale of change in activations (compared to initialization) in the last 100 steps of training (darker red means more divergence, darker blue means vanishing to 0)
+* the best models are trained where this change is constant scale (i.e., 0), which will appear as bright blue colors
+* on each graph, we will overlay the boundary of stability (where rL = 0)
 
+| ![](/assets/alignments/a3b3_high_res_rLs.png) | ![](/assets/alignments/c1c2_high_res_rLs.png) |
+|------------------|------------------|
 
 figure 3: training stability visualized for a grid of different parameterizations based on muP. each pixel is the mean of the change in activation scale (since initialization) for the last 100 steps of training. the theoretical boundary of stability defined by the system in figure 2 is shown in white 
 these visualizations show strong overlap with our theoretical predictions and practical results. however, discrepancies appear in two regions: below and to the left of the stable training frontier in the left grid, and the right grid respectively. could our alignment assumptions be creating overly restrictive constraints? to investigate this hypothesis, let's examine one experiment from the figure above and track how its alignment variables evolve throughout the training process.
