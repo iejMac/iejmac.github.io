@@ -9,7 +9,7 @@ This document is a summary from a light exploration into neural network parametr
   <img src="/assets/alignments/parametrization_definition.png" width="500"/>
 </div>
 
-In the end we develop a max-LR solver which is output the C’s which maximize learning rate for a given ab-parametrization and an alignment measurement. We use this solver to create a dynamic learning rate schedule which maximizes the learning rate at each step of a training run and show that in the majority of cases it improves convergence.
+In the end we develop a max-LR solver which is output the c’s which maximize learning rate for a given ab-parametrization and an alignment measurement. We use this solver to create a dynamic learning rate schedule which maximizes the learning rate at each step of a training run and show that in the majority of cases it improves convergence.
 
 ## Background
 In numerical optimization we want our algorithms to be fast and stable. These two qualities exist in tension, creating an inevitable tradeoff. Pushing for speed positions work at the stability boundary [2, 3] where small changes in experimental setup can nudge us off the edge. What functions reliably at one scale may fail at another, with instabilities often remaining hidden until deployment at scale.
