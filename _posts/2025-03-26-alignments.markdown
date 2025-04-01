@@ -89,8 +89,7 @@ These visualizations show strong overlap with our theoretical predictions and pr
   <img src="/assets/alignments/alignment_check_alpha.png" width="240"/>
 </div>
 
-We can extract two key insights from this analysis:
-Alignment appears to converge during training. Our initial assumptions were inaccurate - full alignment would mean 0.5 omega for all layers and 1.0 U and alpha for all layers. While our omega estimates were relatively accurate, we significantly overestimated alignment for alpha and U variables.
+Our initial assumptions were inaccurate - full alignment would mean 0.5 omega for all layers and 1.0 U and alpha for all layers. While our omega estimates were relatively accurate, we significantly overestimated alignment for alpha and U variables.
 With these empirically measured alignment values, we can now update our visualization to reflect more accurate alignment assumptions.
 
 <div align="center">
