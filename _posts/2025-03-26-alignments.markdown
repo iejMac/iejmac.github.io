@@ -121,7 +121,7 @@ rather than manually probing layer learning rates, we formulated this as a const
 by applying this to muP with our empirically measured alignment values, we discovered that for that experiment we can increase the learning rate exponent of the second layer by 0.404 (as shown in the figures). this translates to multiplying the middle layer learning rate by width^0.404 while maintaining stability. if we rerun this experiment in that setting we see the following substantial improvement in loss:
 
 <div align="center">
-  <img src="/assets/alignments/small_preinit_alignment_loss_comparison.png" width="700"/>
+  <img src="/assets/alignments/small_preinit_alignment_loss_comparison.png" width="500"/>
 </div>
 figure 6: effect of using maximal learning rate exponents derived from measured alignment variables
 
@@ -149,7 +149,7 @@ this method is practical—run a small-scale experiment to discover data-paramet
 our methodology—using converged alignment variables from smaller runs to initialize larger, separate runs—rests on the assumption that alignment is primarily determined by data and parameterization choices. since these properties remain constant across all runs in our grid, we expect the alignment patterns to generalize. to check this assumption, we can compare the converged alignment variables between full alignment initialization and measured alignment initialization across different optimizers and parameterizations used in our experiments. 
 
 <div align="center">
-  <img src="/assets/alignments/converged_alignment_difference.png" width="700"/>
+  <img src="/assets/alignments/converged_alignment_difference.png" width="500"/>
 </div>
 metric: abs((full - measured)[-100:].mean())
 
@@ -203,7 +203,7 @@ for this parametrization x optimizer, when we have full alignment, all layers ge
 its not a silly assumption that the alignment is constant and increases after training has sufficiently warmed up. to visualize this we can look at some simple math:
 
 <div align="center">
-  <img src="/assets/alignments/alignment_creation.png" width="700"/>
+  <img src="/assets/alignments/alignment_creation.png" width="500"/>
 </div>
 
 what we see above is that the primary mechanism through which the weights get updated during training is by adding “shades” of the data therefore its natural to assume the alignment would increase on the same sample. the issue with this assumption is that in most training workflows we rarely iterate over the same data and also we sometimes apply augmentations to it, like adding noise. once again we can look at what the math in the previous example would look like if we decided to add some noise to x:
@@ -218,7 +218,7 @@ we can see that even if there’s a lot of alignment developing in that first te
 to get an empirical sense of this we can add noise to our data during training and see how the alignment variables converge. below we can see a CIFAR-10 training run where we do a linear interpolation between the noise and the data according to the signal strength parameter
 
 <div align="center">
-  <img src="/assets/alignments/empirical_noise_impact_on_alignment.png" width="700"/>
+  <img src="/assets/alignments/empirical_noise_impact_on_alignment.png" width="800"/>
 </div>
 
 
