@@ -1,6 +1,7 @@
 ---
 layout: post
 title:  "exploring tensor alignments in neural networks (part 1)"
+author: Maciej Kilian, Maksymilian Wojnar
 ---
 this document is a summary from a light exploration into neural network parametrizations. the parametrization space we’ll focus on is the abc-parametrization whose definition we borrow from [1]: 
 
