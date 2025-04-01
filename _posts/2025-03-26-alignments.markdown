@@ -3,13 +3,13 @@ layout: post
 title:  "Exploring Tensor Alignments in Neural Networks (Part 1)"
 author: Maciej Kilian, Maksymilian Wojnar
 ---
-This document is a summary from a light exploration into neural network parametrizations. The parametrization space we’ll focus on is the ABC-parametrization whose definition we borrow from [1]: 
+This document is a summary from a light exploration into neural network parametrizations. The parametrization space we’ll focus on is the abc-parametrization whose definition we borrow from [1]: 
 
 <div align="center">
   <img src="/assets/alignments/parametrization_definition.png" width="500"/>
 </div>
 
-In the end we develop a max-LR solver which is output the C’s which maximize learning rate for a given AB-parametrization and an alignment measurement. We use this solver to create a dynamic learning rate schedule which maximizes the learning rate at each step of a training run and show that in the majority of cases it improves convergence.
+In the end we develop a max-LR solver which is output the C’s which maximize learning rate for a given ab-parametrization and an alignment measurement. We use this solver to create a dynamic learning rate schedule which maximizes the learning rate at each step of a training run and show that in the majority of cases it improves convergence.
 
 ## Background
 In numerical optimization we want our algorithms to be fast and stable. These two qualities exist in tension, creating an inevitable tradeoff. Pushing for speed positions work at the stability boundary [2, 3] where small changes in experimental setup can nudge us off the edge. What functions reliably at one scale may fail at another, with instabilities often remaining hidden until deployment at scale.
@@ -102,7 +102,7 @@ Fascinating! By using measured alignment assumptions, we can improve our estimat
 
 ## Maximizing Update Size
 Our analysis reveals a key opportunity: by overestimating alignment, we unnecessarily restrict learning rates. The full-alignment muP approach proves overly conservative.
-Rather than manually probing layer learning rates, we formulated this as a constrained optimization problem: maximize learning rates while satisfying our established stability inequalities. We developed a solver that accepts any AB parameterization and alignment settings (alpha, omega, U), then outputs maximal stable learning rate exponents.
+Rather than manually probing layer learning rates, we formulated this as a constrained optimization problem: maximize learning rates while satisfying our established stability inequalities. We developed a solver that accepts any ab-parameterization and alignment settings (alpha, omega, U), then outputs maximal stable learning rate exponents.
 By applying this to muP with our empirically measured alignment values, we discovered that for that experiment we can increase the learning rate exponent of the second layer by 0.404 (as shown in the figures). This translates to multiplying the middle layer learning rate by width^0.404 while maintaining stability. If we rerun this experiment in that setting we see the following substantial improvement in loss:
 
 <div align="center">
@@ -120,7 +120,7 @@ Let's reproduce this in a slightly more challenging CIFAR-10 setting. For each e
 
 To test our strategy:
 1. Start with base case using full alignment assumption and derived learning rate exponents
-2. Take AB-parameterization and get converged alignment variables from lowest-width version
+2. Take ab-parameterization and get converged alignment variables from lowest-width version
 3. Derive maximal learning rate exponents using measured alignments, then run with that
 
 This method is practical—run a small-scale experiment to discover data-parameter alignments, then apply to your target run. For brevity, I'll only show mean-field parameterization results, but the pattern repeats across parameterizations. Our measured-alignment-based learning rate exponents outperform base MFP for Adam, but for SGD, it's the opposite.
