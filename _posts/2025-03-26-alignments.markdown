@@ -21,10 +21,6 @@ we can analyze an important aspect of training multi-layer neural networks with 
   <img src="/assets/alignments/preactivation_t.png" width="600"/>
 </div>
 
-
-equation 1: pre-activation vector at layer l during training of an MLP
-
-
 this equation captures how perturbations in weights and activations propagate through the network during training. let's examine a simple example for how to design a parametrization to combat instabilities - a single linear weight matrix acting on an input vector.
 
 <div align="center">
@@ -43,7 +39,7 @@ with the 1/sqrt(n) multiplier, for any width we decide to go with, our matrix-ve
 one limitation of this example is its idealistic assumption that W and x are independently sampled with zero mean, allowing us to apply the Central Limit Theorem. this is only true at initialization when both are randomly drawn from zero-mean distributions. after the first update, we must consider potential alignments between W and x.
 
 
-consider an extreme case: if during the first optimizer update, all rows of W were transformed into x.T, the product would scale as O(n) rather than O(√n) - they would be fully aligned. many researchers assume this "full alignment" [5, 6] after training sufficiently warms up and design "defensive" parameterizations to ensure stability under these extreme conditions. however, in [1] they measure the log-alignment ratio and demonstrate this is often overly conservative, suggesting performance gains are possible by relaxing these alignment assumptions.
+consider an extreme case: if during the first optimizer update, all rows of W were transformed into x.T, the product would scale as O(n) rather than O(sqrt(n)) - they would be fully aligned. many researchers assume this "full alignment" [5, 6] after training sufficiently warms up and design "defensive" parameterizations to ensure stability under these extreme conditions. however, in [1] they measure the log-alignment ratio and demonstrate this is often overly conservative, suggesting performance gains are possible by relaxing these alignment assumptions.
 
 <div align="center">
   <img src="/assets/alignments/log_alignment_ratio.png" width="400"/>
@@ -55,13 +51,12 @@ the optimal parameterization maximizes convergence speed while maintaining train
 <div align="center">
   <img src="/assets/alignments/change_in_activation_scale.png" width="600"/>
 </div>
-equation 2: scale of change in activations
 
 
 intuitively, when r_l = 0, the change in activations remains constant regardless of width scaling. Any deviation from this equilibrium pushes us toward either vanishing or exploding activation changes, resulting in poor performance or instability, respectively
 
 
-with our neural network training dynamics described in equation 1 and our stability metric established in equation 2, we can now analyze alignment effects. we can examine the log-alignment ratio for each term in equation 1 (except the first term, since we have no alignment during initialization).
+with our neural network training dynamics and stability metric described using math, we can now analyze alignment effects. we can examine the log-alignment ratio for each term in the representativ emodel (except the first term, since we have no alignment during initialization).
 
 <div align="center">
   <img src="/assets/alignments/alignments.png" width="700"/>
@@ -72,7 +67,6 @@ and derive a system of equations and inequalities which describe stable training
 <div align="center">
   <img src="/assets/alignments/stability_constraints.png" width="700"/>
 </div>
-figure 2: system of constraints which define stable training
 
 ## seeing the parametrization landscape
 to verify our understanding and theory, we can create a visualization - let's grab an interesting point on the polyhedron defined by the above system of equations and inequalities, like muP [4], and probe around it. at each point, we can check if the system is satisfied and also train a simple neural network to measure the metrics we discussed above.
@@ -92,27 +86,22 @@ to make 2D plots, let's explore 2 slices of our parameterization space (a3 vs b3
   <img src="/assets/alignments/c1c2_high_res_rLs.png" width="360"/>
 </div>
 
-figure 3: training stability visualized for a grid of different parameterizations based on muP. each pixel is the mean of the change in activation scale (since initialization) for the last 100 steps of training. the theoretical boundary of stability defined by the system in figure 2 is shown in white 
-these visualizations show strong overlap with our theoretical predictions and practical results. however, discrepancies appear in two regions: below and to the left of the stable training frontier in the left grid, and the right grid respectively. could our alignment assumptions be creating overly restrictive constraints? to investigate this hypothesis, let's examine one experiment from the figure above and track how its alignment variables evolve throughout the training process.
+these visualizations show strong overlap with our theoretical predictions and practical results. however, discrepancies appear in two regions: below and to the left of the stable training frontier in the left grid, and the right grid respectively. could our alignment assumptions be creating overly restrictive constraints? to investigate this hypothesis, let's examine one experiment from the figure above and track how its alignment variables evolve throughout the training process. for these per-layer metrics we tint the color of the curve brighter proportional to the layer index.
 
 <div align="center">
-  <img src="/assets/alignments/alignment_check_u.png" width="200"/>
-  <img src="/assets/alignments/alignment_check_omega.png" width="200"/>
-  <img src="/assets/alignments/alignment_check_alpha.png" width="200"/>
+  <img src="/assets/alignments/alignment_check_u.png" width="250"/>
+  <img src="/assets/alignments/alignment_check_omega.png" width="250"/>
+  <img src="/assets/alignments/alignment_check_alpha.png" width="250"/>
 </div>
 
-figure 4: u (left), omega (middle), and alpha (right) alignment metrics plotted for a single run from the figure 3 experiment during training. the shade of the lines denotes the layer index with darker shades denoting earlier layers
-
 we can extract two key insights from this analysis:
-alignment appears to converge during training
-our initial assumptions were inaccurate - full alignment would mean 0.5 omega for all layers and 1.0 u and alpha for all layers. While our omega estimates were relatively accurate, we significantly overestimated alignment for alpha and u variables.
+alignment appears to converge during training our initial assumptions were inaccurate - full alignment would mean 0.5 omega for all layers and 1.0 u and alpha for all layers. While our omega estimates were relatively accurate, we significantly overestimated alignment for alpha and u variables.
 with these empirically measured alignment values, we can now update our visualization to reflect more accurate alignment assumptions.
 
 <div align="center">
   <img src="/assets/alignments/a3b3_high_res_alignment_adjusted_rLs.png" width="360"/>
   <img src="/assets/alignments/c1c2_high_res_alignment_adjusted_rLs.png" width="360"/>
 </div>
-figure 5: same as figure 3 but stable training frontier uses measured alignment assumptions 
 
 fascinating! by using measured alignment assumptions, we can improve our estimates of the stable training frontier!
 
@@ -124,20 +113,19 @@ by applying this to muP with our empirically measured alignment values, we disco
 <div align="center">
   <img src="/assets/alignments/small_preinit_alignment_loss_comparison.png" width="500"/>
 </div>
-figure 6: effect of using maximal learning rate exponents derived from measured alignment variables
 
 by using data-parameter alignment measurements, we minimize loss more effectively in this simple synthetic setting.
 
 let's reproduce this in a slightly more challenging cifar-10 setting. for each experiment, we:
-create a depth x width grid to ensure robustness across model scales
-sweep over base learning rates and pick the best for each experiment
-try 4 base parameterizations: mean-field, mup, standard, and ntk, all using full alignment assumptions
-try 2 optimizers: sgd and adam (no weight decay)
-run each experiment for 2000 steps with batch size 256, logging loss, per-layer learning rates, alignment metrics, and activation change scale
+* create a depth x width grid to ensure robustness across model scales
+* sweep over base learning rates and pick the best for each experiment
+* try 4 base parameterizations: mean-field, mup, standard, and ntk, all using full alignment assumptions
+* try 2 optimizers: sgd and adam (no weight decay)
+* run each experiment for 2000 steps with batch size 256, logging loss, per-layer learning rates, alignment metrics, and activation change scale
 to test our strategy:
-start with base case using full alignment assumption and derived learning rate exponents
-take ab-parameterization and get converged alignment variables from lowest-width version
-derive maximal learning rate exponents using measured alignments, then run with that
+1. start with base case using full alignment assumption and derived learning rate exponents
+2. take ab-parameterization and get converged alignment variables from lowest-width version
+3. derive maximal learning rate exponents using measured alignments, then run with that
 this method is practical—run a small-scale experiment to discover data-parameter alignments, then apply to your target run. for brevity, i'll only show mean-field parameterization results, but the pattern repeats across parameterizations. our measured-alignment-based learning rate exponents outperform base mfp for adam, but for sgd, it's the opposite.
 
 <div align="center">
