@@ -145,6 +145,25 @@ Furthermore, the results clearly show that pre-initialized alignments cause sign
 ## Dynamic Maximal LR Schedule
 To address this issue, we can ensure the property of being a maximal update parameterization remains invariant throughout training. We implement this by solving for maximal learning rate exponents in real-time at each step, integrating our solver into a learning rate schedule that updates based on current alignment measurements.
 
+```
+select ab-parametrization: a, b
+initialize weights randomly: W
+select reference data X_ref
+compute initial activations: W_init, z_init = forward_pass(X_ref)
+
+for step = 1 to N:
+    z = forward_pass(X)
+
+    alpha, omega, u = compute_alignments(z_init, z, W_init, W)
+
+    loss = compute_loss(z, y)
+    gradients = backprop(loss)
+
+    c = max_lr_solver(a, b, alpha, omega, u)
+    learning_rate = update_lr_schedule(c)
+    W = optimizer_step(W, gradients, learning_rate)
+```
+
 Summarizing the results:
 Dynamic maximal learning rate schedules consistently outperform our pre-measured method or maintain better results than baseline experiments.
 In the worst case, across various parameterization and optimizer combinations, we match baseline performance.
