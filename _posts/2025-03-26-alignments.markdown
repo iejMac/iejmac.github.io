@@ -3,7 +3,7 @@ layout: post
 title:  "Exploring Tensor Alignments in Neural Networks"
 author: Maciej Kilian, Maksymilian Wojnar
 ---
-This document is a summary from a light exploration into neural network parametrizations. The parametrization space we’ll focus on is the abc-parametrization whose definition we borrow from [1]: 
+This document is a summary from a light exploration into neural network parametrizations. The parametrization space we’ll focus on is the abc-parametrization whose definition we borrow from [1] and we use width as the scaling axis.
 
 <div align="center">
   <img src="/assets/alignments/parametrization_definition.png" width="500"/>
@@ -68,12 +68,12 @@ And derive a system of equations and inequalities which describe stable training
 ## Seeing the Parametrization Landscape
 To verify our understanding and theory, we can create a visualization - let's grab an interesting point on the polyhedron defined by the above system of equations and inequalities, like muP [4], and probe around it. At each point, we can check if the system is satisfied and also train a simple neural network to measure the metrics we discussed above.
 
-We can borrow the nice fractal visualization from [2]:
-* Tiny MLPs with 3 layers and a hidden dimension of 64, using ReLU
+We can borrow the nice visualization from [2]:
+* MLPs with 3 layers and a hidden dimension of 64, using ReLU
 * Synthetic data where the input dataset is sampled from an 8-dimensional standard Gaussian and output is sampled from 1-dimensional standard Gaussian
 * Training with MSE, full-batch gradient descent for 500 steps of SGD
 
-To make 2D plots, let's explore 2 slices of our parameterization space (A3 vs B3 and C1 vs C2). For each, we'll center the graph at the muP parameterization and assume full alignment.
+To make 2D plots, let's explore 2 slices of our parameterization space (a3 vs b3 and c1 vs c2). For each, we'll center the graph at the muP parameterization and assume full alignment.
 * The color of each pixel represents the mean scale of change in activations (compared to initialization) in the last 100 steps of training (darker red means more divergence, darker blue means vanishing to 0)
 * The best models are trained where this change is constant scale (i.e., 0), which will appear as bright blue colors
 * On each graph, we will overlay the boundary of stability (where rL = 0)
@@ -83,7 +83,7 @@ To make 2D plots, let's explore 2 slices of our parameterization space (A3 vs B3
   <img src="/assets/alignments/c1c2_high_res_rLs.png" width="360"/>
 </div>
 
-These visualizations show strong overlap with our theoretical predictions and practical results. However, discrepancies appear in two regions: below and to the left of the stable training frontier in the left grid, and the right grid respectively. Could our alignment assumptions be creating overly restrictive constraints? To investigate this hypothesis, let's examine one experiment from the figure above and track how its alignment variables evolve throughout the training process. For these per-layer metrics we tint the color of the curve brighter proportional to the layer index.
+These visualizations show strong overlap with our theoretical predictions and practical results. However, discrepancies appear in two regions: to the left and below the stable training frontier in the left grid, and the right grid respectively. Could our full alignment assumptions be creating overly restrictive constraints? To investigate this hypothesis, let's examine one experiment from the figure above and track how its alignment variables evolve throughout the training process. For these per-layer metrics we tint the color of the curve darker proportional to the layer index.
 
 <div align="center">
   <img src="/assets/alignments/alignment_check_u.png" width="240"/>
@@ -124,7 +124,7 @@ To test our strategy:
 2. Take ab-parameterization and get converged alignment variables from lowest-width version
 3. Derive maximal learning rate exponents using measured alignments, then run with that
 
-This method is practical—run a small-scale experiment to discover data-parameter alignments, then apply to your target run. For brevity, I'll only show mean-field parameterization results, but the pattern repeats across parameterizations. Our measured-alignment-based learning rate exponents outperform base MFP for Adam, but for SGD, it's the opposite.
+This method is practical—run a small-scale experiment to discover data-parameter alignments, then apply to your target run. For brevity, I'll only show mean-field parameterization results, but the pattern repeats across parameterizations. Our measured-alignment-based learning rate exponents outperform full-alignment MFP for Adam, but for SGD, it's the opposite.
 
 <div align="center">
   <img src="/assets/alignments/measured_alignment_mfp_adam_losses.png" width="700"/>
@@ -196,7 +196,7 @@ What we see above is that the primary mechanism through which the weights get up
   <img src="/assets/alignments/impact_of_noise_on_alignment.png" width="700"/>
 </div>
 
-We can see that even if there’s a lot of alignment developing in that first term w^t @ x, there’s plenty of other terms in the output which will have no alignment given that is the product of something with a noise vector. A simple example of the latter is diffusion models where at each step we will be adding noise to the data which will fundamentally limit the amount of alignment which can develop in at least the earlier layers.
+We can see that the majority of the alignment will come from the x @ x term, the rest will not be aligned. A simple example of the latter is diffusion models where at each step we will be adding noise to the data which will fundamentally limit the amount of alignment which can develop in at least the earlier layers.
 
 To get an empirical sense of this we can add noise to our data during training and see how the alignment variables converge. Below we can see a CIFAR-10 training run where we do a linear interpolation between the noise and the data according to the signal strength parameter:
 
@@ -209,16 +209,27 @@ You can see that for some alignment variables, decreasing signal strength leads 
 ## Conclusion
 Our exploration into tensor alignments confirms the findings of prior work [1] that the traditional assumption that these alignments are constant and significant isn't always correct. In reality, they're dynamic, and vary across network layers and training steps. We can likely unlock faster training without sacrificing stability by measuring actual alignments instead of relying on theoretical assumptions which we demonstrate for a set of simple experiments. An intriguing finding is that adding noise directly manipulates alignment properties. This suggests our approach could be especially valuable in training regimes where data characteristics change systematically such as highly multimodal or denoising-based training.
 
-In follow up work we will scale our method and transform these findings into practical, ready-to-use methods that can be applied to real-world training scenarios
-
 ## Future Work
-* As we pointed out above, our notion of “maximal” per layer learning rates isn’t necessarily correct. One follow-up idea could be to test out different notions of maximal f.e. ones that only allow Pareto improvements over full alignment or which only allow epsilon decrease over full alignment.
-* Different notions of alignment.
-* What else impacts alignment? Can we predict a decrease in alignment based on diffusion noise schedules and use that to our advantage? Can we expect multimodal models to have lower average alignment?
-* Cheaper ways of measuring alignment - every N steps, every N steps with decreasing frequency due to convergence, every N layers, etc.
-* How to compose with training-step-wise LR schedules:
-  * Just multiply the two schedules? i.e. base warmup-stable-decay schedule multiplied by the one discovered through alignment
-  * Replace classic linear warmup with alignment discovery?
+
+* **Refining our "maximal" learning rate definition**: Our current approach optimizes the sum of learning rates across layers, which can lead to suboptimal tradeoffs. We could explore alternative definitions that only permit Pareto improvements over full alignment or limit decreases to a small epsilon threshold.
+
+* **Exploring alternative alignment metrics**: After discussions with Jeremy Bernstein, we're aware that more suitable alignment metrics may exist. Redoing this analysis with these alternative metrics could yield valuable insights.
+
+* **Investigating alignment dynamics**: Several questions remain about what impacts alignment:
+  - Can we predict alignment decreases based on diffusion noise schedules and leverage this knowledge?
+  - Do multimodal models naturally exhibit lower average alignment?
+  - How do data characteristics influence alignment patterns?
+
+* **Developing efficient measurement techniques**: To make our approach more practical, we could explore less computationally intensive ways to measure alignment, such as:
+  - Measuring at decreasing frequency as convergence occurs
+  - Sharing measurements across selected subset of layers 
+  - Estimating alignment with fewer calculations
+
+* **Integrating with existing learning rate schedules**: We need to determine how our alignment-based schedules should combine with traditional schedules:
+  - Should we simply multiply our alignment-based schedule with standard warmup-stable-decay schedules?
+  - Could we replace classic linear warmup with an alignment discovery phase, after which alignment is considered constant?
+  - How do different combinations affect convergence properties?
+
 
 ## References
 * [1] Scaling Exponents Across Parameterizations and Optimizers (https://arxiv.org/abs/2407.05872)
@@ -227,6 +238,9 @@ In follow up work we will scale our method and transform these findings into pra
 * [4] Tensor Programs V: Tuning Large Neural Networks via Zero-Shot Hyperparameter Transfer (https://arxiv.org/abs/2203.03466)
 * [5] Feature Learning in Infinite-Width Neural Networks (https://arxiv.org/abs/2011.14522)
 * [6] Scalable Optimization in the Modular Norm (https://arxiv.org/abs/2405.14813)
+
+## Acknowledgements
+
 
 ## Citation
 ```
