@@ -3,7 +3,7 @@ layout: post
 title:  "Exploring Tensor Alignments in Neural Networks"
 author: Maciej Kilian, Maksymilian Wojnar
 ---
-This document is a summary from a light exploration into neural network parametrizations. The parametrization space we’ll focus on is the abc-parametrization whose definition we borrow from [1] and we use width as the scaling axis.
+This document summarizes our exploration into neural network parametrizations, focusing specifically on the abc-parametrization framework defined in [1], with width serving as our primary scaling axis.
 
 <div align="center">
   <img src="/assets/alignments/parametrization_definition.png" width="500"/>
@@ -51,7 +51,7 @@ The optimal parameterization maximizes convergence speed while maintaining train
   <img src="/assets/alignments/change_in_activation_scale.png" width="600"/>
 </div>
 
-Intuitively, when r_l = 0, the change in activations remains constant regardless of width scaling. Any deviation from this equilibrium pushes us toward either vanishing or exploding activation changes, resulting in poor performance or instability, respectively.
+Intuitively, when r_l = 0, the change in activations remains constant scale regardless of width scaling. Any deviation from this equilibrium pushes us toward either vanishing or exploding activation changes, resulting in poor performance or instability, respectively.
 
 With our neural network training dynamics and stability metric described using math, we can now analyze alignment effects. We can examine the log-alignment ratio for each term in the representative model (except the first term, since we have no alignment during initialization).
 
