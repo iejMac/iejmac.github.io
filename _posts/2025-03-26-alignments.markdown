@@ -101,7 +101,7 @@ Fascinating! By using measured alignment assumptions, we can improve our estimat
 
 ## Maximizing Update Size
 Our analysis reveals a key opportunity: by overestimating alignment, we unnecessarily restrict learning rates. The full-alignment muP approach proves overly conservative.
-Rather than manually probing layer learning rates, we formulated this as a constrained optimization problem: maximize learning rates while satisfying our established stability inequalities. We developed a solver that accepts any ab-parameterization and alignment settings (alpha, omega, U), then outputs maximal stable learning rate exponents.
+Rather than manually probing layer learning rates, we formulated this as a constrained optimization problem: maximize learning rates while satisfying our established stability inequalities. We developed a [solver](https://gist.github.com/m-wojnar/a4c1ea9c0603f8a25a9082b0daf90bca) that accepts any ab-parameterization and alignment settings (alpha, omega, U), then outputs maximal stable learning rate exponents.
 By applying this to muP with our empirically measured alignment values, we discovered that for that experiment we can increase the learning rate exponent of the second layer by 0.404 (as shown in the figures). This translates to multiplying the middle layer learning rate by width^0.404 while maintaining stability. If we rerun this experiment in that setting we see the following substantial improvement in loss:
 
 <div align="center">
