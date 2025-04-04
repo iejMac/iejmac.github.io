@@ -9,18 +9,10 @@ This document is a summary from a light exploration into neural network parametr
   <img src="/assets/alignments/parametrization_definition.png" width="500"/>
 </div>
 
-In the end we develop a max-LR solver which is output the c’s which maximize learning rate for a given ab-parametrization and an alignment measurement. We use this solver to create a dynamic learning rate schedule which maximizes the learning rate at each step of a training run and show that in the majority of cases it improves convergence.
+In the end we develop a max-LR solver which is output the c’s which maximize learning rate for a given ab-parametrization and tensor alignment measurement. We use this solver to create a dynamic learning rate schedule which maximizes the learning rate within the bounds of stability at each step of a training run and show that in the majority of cases it achieves a lower loss.
 
-## Background
-In numerical optimization we want our algorithms to be fast and stable. These two qualities exist in tension, creating an inevitable tradeoff. Pushing for speed positions work at the stability boundary [2, 3] where small changes in experimental setup can nudge us off the edge. What functions reliably at one scale may fail at another, with instabilities often remaining hidden until deployment at scale.
-
-We can analyze an important aspect of training multi-layer neural networks with the following representative model:
-
-<div align="center">
-  <img src="/assets/alignments/preactivation_t.png" width="600"/>
-</div>
-
-This equation captures how perturbations in weights and activations propagate through the network during training. Let's examine a simple example for how to design a parametrization to combat instabilities - a single linear weight matrix acting on an input vector.
+## Parametrizations
+Let's examine a simple example for how to design a parametrization to combat instabilities - a single linear weight matrix acting on an input vector.
 
 <div align="center">
   <img src="/assets/alignments/bad_param_scale.png" width="400"/>
@@ -32,7 +24,7 @@ If we naively parametrize our weight matrix, the average coordinate scale is O(s
   <img src="/assets/alignments/good_param_scale.png" width="400"/>
 </div>
 
-With the 1/sqrt(n) multiplier, for any width we decide to go with, our matrix-vector product will be stable w.r.t. width scaling i.e. the coordinate scale is not a function of the width.
+With the 1/sqrt(n) multiplier, for any width we decide to go with, our matrix-vector product will be stable since the coordinate scale is not a function of the width.
 
 One limitation of this example is its idealistic assumption that W and x are independently sampled with zero mean, allowing us to apply the Central Limit Theorem. This is only true at initialization when both are randomly drawn from zero-mean distributions. After the first update, we must consider potential alignments between W and x.
 
@@ -43,6 +35,16 @@ Consider an extreme case: if during the first optimizer update, all rows of W we
 </div>
 
 ## Solving for Optimal Parametrizations
+In numerical optimization we want our algorithms to be fast and stable. These two qualities exist in tension, creating an inevitable tradeoff. Pushing for speed positions work at the stability boundary [2, 3] where small changes in experimental setup can nudge us off the edge. What functions reliably at one scale may fail at another, with instabilities often remaining hidden until deployment at scale.
+
+We can analyze an important aspect of training multi-layer neural networks with the following representative model:
+
+<div align="center">
+  <img src="/assets/alignments/preactivation_t.png" width="600"/>
+</div>
+
+This equation captures how perturbations in weights and activations propagate through the network during training.
+
 The optimal parameterization maximizes convergence speed while maintaining training stability. To derive such parameterizations, we need clear objectives. The first is straightforward—we want to maximize learning rate. The second requires more nuance. For a comprehensive discussion on this topic, we recommend [1], from which we borrow the following definition:
 
 <div align="center">
