@@ -147,8 +147,9 @@ To address this issue, we can ensure the property of being a maximal update para
 
 ```
 select ab-parametrization: a, b
-initialize weights randomly: W
-compute initial activations: W_init, z_init = forward_pass(X)
+initialize weights randomly: W_init
+compute initial activations: z_init = forward_pass(X, W_init)
+W = W_init
 
 for step = 1 to N:
     z = forward_pass(X)
