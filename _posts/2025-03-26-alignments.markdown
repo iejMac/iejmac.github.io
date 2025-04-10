@@ -6,7 +6,7 @@ author: Maciej Kilian, Maksymilian Wojnar
 This document summarizes our exploration into neural network parameterizations, focusing specifically on the abc-parameterization framework defined in [[1](https://arxiv.org/abs/2407.05872)], with width serving as our primary scaling axis.
 
 <div align="center">
-  <img src="/assets/alignments/parameterization_definition.png" width="500"/>
+  <img src="/assets/alignments/parametrization_definition.png" width="500"/>
 </div>
 
 In the end we develop a dynamic learning rate scheduler which solves for the maximal stable learning rate at each step of training by measuring alignments between weights and activations. Using this scheduler we are able to minimize loss more effectively in the majority of cases.
