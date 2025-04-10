@@ -211,7 +211,7 @@ We can also check in on what the alignment variables look like for the largest s
 </div>
 
 ## What Impacts Alignment?
-It’s not a silly assumption that the alignment is constant and increases after training has sufficiently warmed up. To visualize this we can look at some simple math:
+It’s not a unreasonable to assume that the alignment is constant and increases after training has sufficiently warmed up. To visualize this we can look at some simple math:
 
 <div align="center">
   <img src="/assets/alignments/alignment_creation.png" width="500"/>
