@@ -9,7 +9,7 @@ This document summarizes our exploration into neural network parametrizations, f
   <img src="/assets/alignments/parametrization_definition.png" width="500"/>
 </div>
 
-In the end we develop a max-LR solver which is output the c’s which maximize learning rate for a given ab-parametrization and tensor alignment measurement. We use this solver to create a dynamic learning rate schedule which maximizes the learning rate within the bounds of stability at each step of a training run and show that in the majority of cases it achieves a lower loss.
+In the end we develop a dynamic learning rate scheduler which solves for the maximal stable learning rate at each step of training by measuring alignments between weights and activations. Using this scheduler we are able to minimize loss more effectively in the majority of cases.
 
 ## Parametrizations
 Let's examine a simple example for how to design a parametrization to combat instabilities - a single linear weight matrix acting on an input vector.
@@ -24,7 +24,7 @@ If we naively parametrize our weight matrix, the average coordinate scale is O(s
   <img src="/assets/alignments/good_param_scale.png" width="400"/>
 </div>
 
-With the 1/sqrt(n) multiplier, for any width we decide to go with, our matrix-vector product will be stable since the coordinate scale is not a function of the width.
+With the 1/sqrt(n) multiplier, for any width we decide to go with, our matrix-vector product will be stable since the coordinate scale is no longer a function of the width.
 
 One limitation of this example is its idealistic assumption that W and x are independently sampled with zero mean, allowing us to apply the Central Limit Theorem. This is only true at initialization when both are randomly drawn from zero-mean distributions. After the first update, we must consider potential alignments between W and x.
 
@@ -66,7 +66,7 @@ And derive a system of equations and inequalities which describe stable training
 </div>
 
 ## Seeing the Parametrization Landscape
-To verify our understanding and theory, we can create a visualization - let's grab an interesting point on the polyhedron defined by the above system of equations and inequalities, like muP [4], and probe around it. At each point, we can check if the system is satisfied and also train a simple neural network to measure the metrics we discussed above.
+To verify our understanding and theory, we can create a visualization - let's grab an interesting point on the polyhedron defined by the above system of equations and inequalities, like muP [4], and probe around it. At each point, we can check if the system is satisfied and also train a simple neural network to measure the scale of the change in acitvations.
 
 We can borrow the nice visualization from [2]:
 * MLPs with 3 layers and a hidden dimension of 64, using ReLU
@@ -76,7 +76,7 @@ We can borrow the nice visualization from [2]:
 To make 2D plots, let's explore 2 slices of our parameterization space (a3 vs b3 and c1 vs c2). For each, we'll center the graph at the muP parameterization and assume full alignment.
 * The color of each pixel represents the mean scale of change in activations (compared to initialization) in the last 100 steps of training (darker red means more divergence, darker blue means vanishing to 0)
 * The best models are trained where this change is constant scale (i.e., 0), which will appear as bright blue colors
-* On each graph, we will overlay the boundary of stability (where rL = 0)
+* On each graph, we will overlay the boundary of stability (where rL = 0) according to the system of equations and inequalities
 
 <div align="center">
   <img src="/assets/alignments/a3b3_high_res_rLs.png" width="360"/>
@@ -104,7 +104,7 @@ Fascinating! By using measured alignment assumptions, we can improve our estimat
 ## Maximizing Update Size
 Our analysis reveals a key opportunity: by overestimating alignment, we unnecessarily restrict learning rates. The full-alignment muP approach proves overly conservative.
 Rather than manually probing layer learning rates, we formulated this as a constrained optimization problem: maximize learning rates while satisfying our established stability inequalities. We developed a [solver](https://gist.github.com/m-wojnar/a4c1ea9c0603f8a25a9082b0daf90bca) that accepts any ab-parameterization and alignment settings (alpha, omega, U), then outputs maximal stable learning rate exponents.
-By applying this to muP with our empirically measured alignment values, we discovered that for that experiment we can increase the learning rate exponent of the second layer by 0.404 (as shown in the figures). This translates to multiplying the middle layer learning rate by width^0.404 while maintaining stability. If we rerun this experiment in that setting we see the following substantial improvement in loss:
+By applying this to muP with our empirically measured alignment values, we discovered that for that experiment we can increase the learning rate exponent of the second layer by 0.404 (as shown in the figures). This translates to multiplying the middle layer learning rate by width^0.404 while maintaining stability. If we rerun this experiment in that setting we see the following improvement in loss:
 
 <div align="center">
   <img src="/assets/alignments/small_preinit_alignment_loss_comparison.png" width="500"/>
@@ -202,7 +202,7 @@ For this parametrization × optimizer, when we have full alignment, all layers g
   <img src="/assets/alignments/ntk_sgdlearning_rates.png" width="700"/>
 </div>
 
-We can also check in on what the alignment variables look like for the largest scale dynamic maximal LR  run in our grid
+We can also check in on what the alignment variables look like for the largest scale dynamic maximal LR  run in our grid (f.e. for the muP base parametrization)
 
 <div align="center">
   <img src="/assets/alignments/mup_adam_alignment_U.png" width="240"/>
@@ -225,29 +225,29 @@ What we see above is that the primary mechanism through which the weights get up
 
 We can see that the majority of the alignment will come from the x @ x term, the rest will not be aligned. A simple example of the latter is diffusion models where at each step we will be adding noise to the data which will fundamentally limit the amount of alignment which can develop in at least the earlier layers.
 
-To get an empirical sense of this we can add noise to our data during training and see how the alignment variables converge. Below we can see a CIFAR-10 training run where we do a linear interpolation between the noise and the data according to the signal strength parameter:
+To get an empirical sense of this we can pregressively add more noise to our data during training and see how the alignment variables converge. Below we can see a CIFAR-10 training run where we do a linear interpolation between the noise and the data according to the signal strength parameter:
 
 <div align="center">
   <img src="/assets/alignments/empirical_noise_impact_on_alignment.png" width="800"/>
 </div>
 
-You can see that for some alignment variables, decreasing signal strength leads to decreased alignment.
+You can see that for some alignment variables, decreasing signal strength leads to decreased alignment, especially for the earlier layers.
 
 ## Conclusion
 Our exploration into tensor alignments confirms the findings of prior work [1] that the traditional assumption that these alignments are constant and significant isn't always correct. In reality, they're dynamic, and vary across network layers and training steps. We can likely unlock faster training without sacrificing stability by measuring actual alignments instead of relying on theoretical assumptions which we demonstrate for a set of simple experiments. An intriguing finding is that adding noise directly manipulates alignment properties. This suggests our approach could be especially valuable in training regimes where data characteristics change systematically such as highly multimodal or denoising-based training.
 
 ## Future Work
 
-* **Refining our "maximal" learning rate definition**: Our current approach optimizes the sum of learning rates across layers, which can lead to suboptimal tradeoffs. We could explore alternative definitions that only permit Pareto improvements over full alignment or limit decreases to a small epsilon threshold.
+* **Refining our "maximal" learning rate definition**: Our current approach optimizes the sum of learning rates across layers, which can lead to suboptimal tradeoffs. We could explore alternative definitions that only permit Pareto improvements over full alignment or limit allowed decreases.
 
-* **Exploring alternative alignment metrics**: After discussions with Jeremy Bernstein, we're aware that more suitable alignment metrics may exist. Redoing this analysis with these alternative metrics could yield valuable insights.
+* **Exploring alternative alignment metrics**: More suitable alignment metrics may exist. Doing this analysis with these alternative metrics could yield valuable insights.
 
 * **Investigating alignment dynamics**: Several questions remain about what impacts alignment:
-  - Can we predict alignment decreases based on diffusion noise schedules and leverage this knowledge?
+  - Can we predict alignment decreases based on noise schedules and leverage this knowledge?
   - Do multimodal models naturally exhibit lower average alignment?
   - How do data characteristics influence alignment patterns?
 
-* **Developing efficient measurement techniques**: To make our approach more practical, we could explore less computationally intensive ways to measure alignment, such as:
+* **Developing efficient measurement techniques**: To make our approach more practical, we could explore less computationally/memory intensive ways to measure alignment, such as:
   - Measuring at decreasing frequency as convergence occurs
   - Sharing measurements across selected subset of layers 
   - Estimating alignment with fewer calculations
@@ -257,6 +257,7 @@ Our exploration into tensor alignments confirms the findings of prior work [1] t
   - Could we replace classic linear warmup with an alignment discovery phase, after which alignment is considered constant?
   - How do different combinations affect convergence properties?
 
+We will explore some of these questions in follow up work.
 
 ## References
 * [1] Scaling Exponents Across Parameterizations and Optimizers (https://arxiv.org/abs/2407.05872)
@@ -267,7 +268,7 @@ Our exploration into tensor alignments confirms the findings of prior work [1] t
 * [6] Scalable Optimization in the Modular Norm (https://arxiv.org/abs/2405.14813)
 
 ## Acknowledgements
-
+We'd like to thank [Akshat Shrivastava](https://scholar.google.com/citations?user=ecQt6m4AAAAJ&hl=en) and [Armen Aghajanyan](Armen Aghajanyan) for help reviewing and editing this post as well as [Katie Everett](https://scholar.google.com/citations?user=q1AewNAAAAAJ&hl=en) and [Jeremy Bernstein](https://scholar.google.com/citations?user=Kz5C0p0AAAAJ&hl=en) for helpful discussion.
 
 ## Citation
 ```
