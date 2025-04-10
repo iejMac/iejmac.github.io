@@ -3,16 +3,16 @@ layout: post
 title:  "Exploring Tensor Alignments in Neural Networks"
 author: Maciej Kilian, Maksymilian Wojnar
 ---
-This document summarizes our exploration into neural network parametrizations, focusing specifically on the abc-parametrization framework defined in [[1](https://arxiv.org/abs/2407.05872)], with width serving as our primary scaling axis.
+This document summarizes our exploration into neural network parameterizations, focusing specifically on the abc-parameterization framework defined in [[1](https://arxiv.org/abs/2407.05872)], with width serving as our primary scaling axis.
 
 <div align="center">
-  <img src="/assets/alignments/parametrization_definition.png" width="500"/>
+  <img src="/assets/alignments/parameterization_definition.png" width="500"/>
 </div>
 
 In the end we develop a dynamic learning rate scheduler which solves for the maximal stable learning rate at each step of training by measuring alignments between weights and activations. Using this scheduler we are able to minimize loss more effectively in the majority of cases.
 
 ## Parameterizations
-Let's examine a simple example for how to design a parametrization to combat instabilities - a single linear weight matrix acting on an input vector.
+Let's examine a simple example for how to design a parameterization to combat instabilities - a single linear weight matrix acting on an input vector.
 
 <div align="center">
   <img src="/assets/alignments/bad_param_scale.png" width="400"/>
@@ -124,7 +124,7 @@ To test our strategy:
 2. Take ab-parameterization and get converged alignment variables from lowest-width version
 3. Derive maximal learning rate exponents using measured alignments, then run with that
 
-This method is practical—run a small-scale experiment to discover data-parameter alignments, then apply to your target run. For brevity, I'll only show mean-field parameterization results, but the pattern repeats across parameterizations. Our measured-alignment-based learning rate exponents outperform full-alignment MFP for Adam, but for SGD, it's the opposite.
+This method is practical - run a small-scale experiment to discover data-parameter alignments, then apply to your target run. For brevity, I'll only show mean-field parameterization results, but the pattern repeats across parameterizations. Our measured-alignment-based learning rate exponents outperform full-alignment MFP for Adam, but for SGD, it's the opposite.
 
 <div align="center">
   <img src="/assets/alignments/measured_alignment_mfp_adam_losses.png" width="700"/>
@@ -133,7 +133,7 @@ This method is practical—run a small-scale experiment to discover data-paramet
   <img src="/assets/alignments/measured_alignment_mfp_sgd_losses.png" width="700"/>
 </div>
 
-Our methodology—using converged alignment variables from smaller runs to initialize larger, separate runs—rests on the assumption that alignment is primarily determined by data and parameterization choices. Since these properties remain constant across all runs in our grid, we expect the alignment patterns to generalize. To check this assumption, we can look at the absolute difference in the converged (mean across last 100 training steps) alignment variables between full alignment initialization and measured alignment initialization across different optimizers and parameterizations used in our experiments.
+Our methodology - using converged alignment variables from smaller runs to initialize larger, separate runs - rests on the assumption that alignment is primarily determined by data and parameterization choices. Since these properties remain constant across all runs in our grid, we expect the alignment patterns to generalize. To check this assumption, we can look at the absolute difference in the converged (mean across last 100 training steps) alignment variables between full alignment initialization and measured alignment initialization across different optimizers and parameterizations used in our experiments.
 
 <div align="center">
   <img src="/assets/alignments/converged_alignment_difference.png" width="500"/>
@@ -146,7 +146,7 @@ Furthermore, the results clearly show that pre-initialized alignments cause sign
 To address this issue, we can ensure the property of being a maximal update parameterization remains invariant throughout training. We implement this by solving for maximal learning rate exponents in real-time at each step, integrating our solver into a learning rate schedule that updates based on current alignment measurements.
 
 ```
-select ab-parametrization: a, b
+select ab-parameterization: a, b
 initialize weights randomly: W_init
 compute initial activations: z_init = forward_pass(X, W_init)
 W = W_init
@@ -182,7 +182,7 @@ And here’s an example where our pre-measured alignment method underperformed b
 
 Our hypothesis for this case concerns our definition of "maximal per-layer learning rate exponents." In our solver, we maximize the sum of learning rates, allowing tradeoffs between layers—we would reduce one layer's rate by 0.1 if it enables increasing others by a total exceeding 0.1.
 
-This approach assumes all layers contribute equally to optimization, which may not be universally true. If this assumption explains our inconsistent improvements, we should observe a correlation between performance and tradeoff intensity. To test this, we'll plot loss improvement over the baseline against a metric measuring these tradeoffs—specifically, the average decrease (increases ignored) in learning rate per layer calculated as the sum of all decreases divided by the number of layers, which equals zero if all layers receive increased rates.
+This approach assumes all layers contribute equally to optimization, which may not be universally true. If this assumption explains our inconsistent improvements, we should observe a correlation between performance and tradeoff intensity. To test this, we'll plot loss improvement over the baseline against a metric measuring these tradeoffs - specifically, the average decrease (increases ignored) in learning rate per layer calculated as the sum of all decreases divided by the number of layers, which equals zero if all layers receive increased rates.
 
 <div align="center">
   <img src="/assets/alignments/loss_decrease_vs_lr_tradeoffs.png" width="700"/>
@@ -190,19 +190,19 @@ This approach assumes all layers contribute equally to optimization, which may n
 
 As we can see, there is a clear relationship showing that more tradeoffs lead to less loss improvement. The good thing is that in the vast majority of cases we see a healthy improvement in loss. In the future an interesting direction to look into might be a solver which only considers Pareto improvements over full alignment.
 
-We can also see that NTK and SP parametrization dominate the lower tradeoff (left) portion of the figure whereas MFP and muP dominate the right. Furthermore in that right cluster we can see that SGD tends to have more tradeoffs than Adam. We can see what’s going on when we look at the learning rate schedule for runs from this cluster, f.e. let's look at muP + SGD:
+We can also see that NTK and SP parameterization dominate the lower tradeoff (left) portion of the figure whereas MFP and muP dominate the right. Furthermore in that right cluster we can see that SGD tends to have more tradeoffs than Adam. We can see what’s going on when we look at the learning rate schedule for runs from this cluster, f.e. let's look at muP + SGD:
 
 <div align="center">
   <img src="/assets/alignments/mup_sgdlearning_rates.png" width="700"/>
 </div>
 
-For this parametrization × optimizer, when we have full alignment, all layers get the same learning rate which means our solver will likely attempt some tradeoffs. On the other hand with NTK + SGD we can almost always get a Pareto increase in learning rate for all layers.
+For this parameterization × optimizer, when we have full alignment, all layers get the same learning rate which means our solver will likely attempt some tradeoffs. On the other hand with NTK + SGD we can almost always get a Pareto increase in learning rate for all layers.
 
 <div align="center">
   <img src="/assets/alignments/ntk_sgdlearning_rates.png" width="700"/>
 </div>
 
-We can also check in on what the alignment variables look like for the largest scale dynamic maximal LR  run in our grid (f.e. for the muP base parametrization)
+We can also check in on what the alignment variables look like for the largest scale dynamic maximal LR  run in our grid (f.e. for the muP base parameterization)
 
 <div align="center">
   <img src="/assets/alignments/mup_adam_alignment_U.png" width="240"/>
