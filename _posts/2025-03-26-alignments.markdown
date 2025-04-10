@@ -202,6 +202,14 @@ For this parametrization × optimizer, when we have full alignment, all layers g
   <img src="/assets/alignments/ntk_sgdlearning_rates.png" width="700"/>
 </div>
 
+We can also check in on what the alignment variables look like for the largest scale dynamic maximal LR  run in our grid
+
+<div align="center">
+  <img src="/assets/alignments/mup_adam_alignment_U.png" width="240"/>
+  <img src="/assets/alignments/mup_adam_alignment_Omega.png" width="240"/>
+  <img src="/assets/alignments/mup_adam_alignment_Alpha.png" width="240"/>
+</div>
+
 ## What Impacts Alignment?
 It’s not a silly assumption that the alignment is constant and increases after training has sufficiently warmed up. To visualize this we can look at some simple math:
 
@@ -209,7 +217,7 @@ It’s not a silly assumption that the alignment is constant and increases after
   <img src="/assets/alignments/alignment_creation.png" width="500"/>
 </div>
 
-What we see above is that the primary mechanism through which the weights get updated during training is by adding “shades” of the data. Therefore it’s natural to assume the alignment would increase on the same sample. The issue with this assumption is that in most training workflows we rarely iterate over the same data and also we sometimes apply augmentations to it, like adding noise. Once again we can look at what the math in the previous example would look like if we decided to add some noise to x:
+What we see above is that the primary mechanism through which the weights get updated during training is by adding “shades” of the data. Therefore it’s natural to assume the alignment would increase on the same sample. The issue with this assumption is that in most training jobs we rarely iterate over the same data and also we sometimes apply augmentations to it, like adding noise. Once again we can look at what the math in the previous example would look like if we decided to add some noise to x:
 
 <div align="center">
   <img src="/assets/alignments/impact_of_noise_on_alignment.png" width="700"/>
