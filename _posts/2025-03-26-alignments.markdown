@@ -257,8 +257,6 @@ Our exploration into tensor alignments confirms the findings of prior work [1] t
   - Could we replace classic linear warmup with an alignment discovery phase, after which alignment is considered constant?
   - How do different combinations affect convergence properties?
 
-We will explore some of these questions in follow up work.
-
 ## References
 * [1] Scaling Exponents Across Parameterizations and Optimizers (https://arxiv.org/abs/2407.05872)
 * [2] The Boundary of Neural Network Trainability Is Fractal (https://arxiv.org/abs/2402.06184)
